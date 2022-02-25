@@ -2,7 +2,7 @@ import concurrent.futures
 import sys
 from collections.abc import Awaitable, Generator, Iterable, Iterator
 from types import FrameType
-from typing import Any, Generic, Optional, TextIO, TypeVar, Union, overload
+from typing import Any, List, Generic, Optional, TextIO, TypeVar, Union, overload
 from typing_extensions import Literal
 
 from .events import AbstractEventLoop
@@ -46,6 +46,8 @@ def ensure_future(coro_or_future: Awaitable[_T], *, loop: AbstractEventLoop | No
 # zip() because typing does not support variadic type variables.  See
 # typing PR #1550 for discussion.
 if sys.version_info >= (3, 10):
+    @overload
+    def gather(*coros_or_futures: _FutureT[_T], *, return_exceptions: Literal[False] = ...) -> Future[List[_T]]: ...
     @overload
     def gather(coro_or_future1: _FutureT[_T1], *, return_exceptions: Literal[False] = ...) -> Future[tuple[_T1]]: ...
     @overload
@@ -91,6 +93,8 @@ if sys.version_info >= (3, 10):
         return_exceptions: bool = ...,
     ) -> Future[list[Any]]: ...
     @overload
+    def gather(*coros_or_futures: _FutureT[_T], *, return_exceptions: bool = ...) -> Future[List[_T | BaseException]]: ...
+    @overload
     def gather(coro_or_future1: _FutureT[_T1], *, return_exceptions: bool = ...) -> Future[tuple[_T1 | BaseException]]: ...
     @overload
     def gather(
@@ -127,6 +131,10 @@ if sys.version_info >= (3, 10):
     ]: ...
 
 else:
+    @overload
+    def gather(
+        *coros_or_futures: _FutureT[_T], *, loop: AbstractEventLoop | None = ..., return_exceptions: Literal[False] = ...
+    ) -> Future[List[_T1]]: ...
     @overload
     def gather(
         coro_or_future1: _FutureT[_T1], *, loop: AbstractEventLoop | None = ..., return_exceptions: Literal[False] = ...
@@ -181,6 +189,10 @@ else:
         loop: AbstractEventLoop | None = ...,
         return_exceptions: bool = ...,
     ) -> Future[list[Any]]: ...
+    @overload
+    def gather(
+        *coros_or_futures: _FutureT[_T1], *, loop: AbstractEventLoop | None = ..., return_exceptions: bool = ...
+    ) -> Future[List[_T1 | BaseException]]: ...
     @overload
     def gather(
         coro_or_future1: _FutureT[_T1], *, loop: AbstractEventLoop | None = ..., return_exceptions: bool = ...
